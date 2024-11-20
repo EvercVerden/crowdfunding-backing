@@ -1,0 +1,604 @@
+# 众筹平台 API 测试文档 v1.0
+
+## 基础信息
+BASE_URL = http://localhost:8080
+Content-Type: application/json (除非特别说明)
+
+## 环境变量
+- BASE_URL: http://localhost:8080
+- TOKEN: [登录后自动设置]
+- ADMIN_TOKEN: [管理员登录后设置]
+
+## 1. 用户认证模块
+
+### 1.1 用户注册
+POST {{BASE_URL}}/api/register
+Content-Type: application/json
+
+Request:
+{
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "Test@123456"
+}
+
+Response (201):
+{
+    "message": "User registered successfully"
+}
+
+### 1.2 用户登录
+POST {{BASE_URL}}/api/login
+
+Request:
+{
+    "email": "test@example.com",
+    "password": "Test@123456"
+}
+
+Response (200):
+{
+    "message": "登录成功",
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "user": {
+        "id": 1,
+        "username": "testuser",
+        "email": "test@example.com",
+        "avatar_url": "",
+        "bio": "",
+        "role": "user",
+        "is_verified": false
+    }
+}
+
+### 1.3 请求密码重置
+POST {{BASE_URL}}/api/request-password-reset
+Content-Type: application/json
+
+Request:
+{
+    "email": "test@example.com"
+}
+
+Response (200):
+{
+    "message": "Password reset email sent"
+}
+
+### 1.4 重置密码
+POST {{BASE_URL}}/api/reset-password
+Content-Type: application/json
+
+Request:
+{
+    "token": "eyJhbGciOiJIUzI1NiIs...",
+    "new_password": "NewTest@123456"
+}
+
+Response (200):
+{
+    "message": "Password reset successfully"
+}
+
+### 1.5 验证邮箱
+GET {{BASE_URL}}/api/verify-email?token=eyJhbGciOiJIUzI1NiIs...
+
+Response (200):
+{
+    "message": "Email verified successfully"
+}
+
+### 1.6 获取个人资料
+GET {{BASE_URL}}/api/profile
+Authorization: Bearer {{TOKEN}}
+
+Response (200):
+{
+    "user": {
+        "id": 1,
+        "username": "testuser",
+        "email": "test@example.com",
+        "avatar_url": "http://localhost:8080/uploads/avatars/1/avatar.jpg",
+        "bio": "用户简介"
+    }
+}
+
+### 1.7 更新个人资料
+PUT {{BASE_URL}}/api/profile
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+Request:
+{
+    "username": "newusername",
+    "bio": "新的个人简介"
+}
+
+Response (200):
+{
+    "message": "Profile updated successfully",
+    "user": {
+        "id": 1,
+        "username": "newusername",
+        "bio": "新的个人简介"
+    }
+}
+
+### 1.8 上传头像
+POST {{BASE_URL}}/api/profile/avatar
+Authorization: Bearer {{TOKEN}}
+Content-Type: multipart/form-data
+
+Form Data:
+- avatar: [文件]
+
+Response (200):
+{
+    "message": "头像上传成功",
+    "avatar_url": "http://localhost:8080/uploads/avatars/1/avatar.jpg"
+}
+
+## 2. 项目管理模块
+
+### 2.1 创建项目
+POST {{BASE_URL}}/api/projects
+Authorization: Bearer {{TOKEN}}
+Content-Type: multipart/form-data
+
+Form Data:
+- title: "测试项目"
+- description: "这是一个测试项目"
+- end_date: "2024-12-31T23:59:59Z"
+- category_id: 1
+- project_images[]: [文件1]
+- project_images[]: [文件2]
+- goals[0][amount]: 1000
+- goals[0][description]: "第一个目标"
+- goals[0][images][]: [文件3]
+- goals[1][amount]: 2000
+- goals[1][description]: "第二个目标"
+- goals[1][images][]: [文件4]
+
+Response (201):
+{
+    "message": "Project created successfully",
+    "project_id": 1
+}
+
+### 2.2 获取项目列表
+GET {{BASE_URL}}/api/projects?page=1&page_size=10
+
+Response (200):
+{
+    "projects": [
+        {
+            "id": 1,
+            "title": "测试项目",
+            "description": "这是一个测试项目",
+            "creator_id": 1,
+            "status": "active",
+            "total_amount": 5000.00,
+            "total_goal_amount": 10000.00,
+            "progress": 50.00,
+            "goals": [
+                {
+                    "id": 1,
+                    "amount": 3000.00,
+                    "description": "第一个目标",
+                    "is_reached": true,
+                    "progress": 166.67
+                }
+            ],
+            "primary_image": "http://localhost:8080/uploads/projects/1/image1.jpg"
+        }
+    ],
+    "pagination": {
+        "current_page": 1,
+        "page_size": 10,
+        "total_pages": 5,
+        "total_items": 42
+    }
+}
+
+### 2.3 获取项目详情
+GET {{BASE_URL}}/api/projects/1
+
+Response (200):
+{
+    "project": {
+        "id": 1,
+        "title": "测试项目",
+        "description": "这是一个测试项目",
+        "creator_id": 1,
+        "status": "active",
+        "total_amount": 5000.00,
+        "total_goal_amount": 10000.00,
+        "progress": 50.00,
+        "goals": [
+            {
+                "id": 1,
+                "amount": 3000.00,
+                "description": "第一个目标",
+                "is_reached": true,
+                "progress": 166.67,
+                "images": [
+                    {
+                        "id": 3,
+                        "image_url": "http://localhost:8080/uploads/projects/1/goals/1/image1.jpg"
+                    }
+                ]
+            }
+        ],
+        "images": [
+            {
+                "id": 1,
+                "image_url": "http://localhost:8080/uploads/projects/1/image1.jpg",
+                "is_primary": true
+            }
+        ]
+    }
+}
+
+### 2.4 项目搜索
+POST {{BASE_URL}}/api/projects/search
+Content-Type: application/json
+
+Request:
+{
+    "keyword": "测试",
+    "category": 1,
+    "status": "active",
+    "min_amount": 0,
+    "max_amount": 10000,
+    "start_date": "2024-01-01T00:00:00Z",
+    "end_date": "2024-12-31T23:59:59Z",
+    "tags": [1, 2]
+}
+
+Response (200):
+{
+    "projects": [...],
+    "pagination": {
+        "current_page": 1,
+        "page_size": 10,
+        "total_pages": 1,
+        "total_items": 5
+    }
+}
+
+## 3. 支付模块
+
+### 3.1 支持项目
+POST {{BASE_URL}}/api/payments/projects/1
+Authorization: Bearer {{TOKEN}}
+
+Request:
+{
+    "amount": 100.00
+}
+
+Response (200):
+{
+    "message": "Payment processed successfully",
+    "payment_id": 1,
+    "payment": {
+        "id": 1,
+        "user_id": 1,
+        "project_id": 1,
+        "amount": 100.00,
+        "status": "completed",
+        "created_at": "2024-03-20T10:00:00Z"
+    }
+}
+
+### 3.2 申请退款
+POST {{BASE_URL}}/api/payments/1/refunds
+Authorization: Bearer {{TOKEN}}
+
+Request:
+{
+    "amount": 100.00,
+    "reason": "退款原因说明"
+}
+
+Response (200):
+{
+    "message": "Refund request processed successfully",
+    "refund": {
+        "id": 1,
+        "payment_id": 1,
+        "amount": 100.00,
+        "reason": "退款原因说明",
+        "status": "pending",
+        "created_at": "2024-03-20T10:00:00Z"
+    }
+}
+
+## 4. 管理员功能
+
+### 4.1 审核项目
+POST {{BASE_URL}}/api/admin/projects/1/review
+Authorization: Bearer {{ADMIN_TOKEN}}
+
+Request:
+{
+    "approved": true,
+    "comment": "审核通过"
+}
+
+Response (200):
+{
+    "message": "Project review completed"
+}
+
+### 4.2 获取系统统计
+GET {{BASE_URL}}/api/admin/stats
+Authorization: Bearer {{ADMIN_TOKEN}}
+
+Response (200):
+{
+    "total_users": 100,
+    "total_projects": 50,
+    "successful_projects": 30,
+    "total_pledged_amount": 500000.00
+}
+
+## Postman 测试脚本
+
+// 登录后保存 token
+pm.test("Save token after login", function () {
+    if (pm.response.code === 200) {
+        var jsonData = pm.response.json();
+        pm.environment.set("TOKEN", jsonData.token);
+    }
+});
+
+// 检查响应状态码
+pm.test("Status code is 200", function () {
+    pm.response.to.have.status(200);
+});
+
+// 检查响应格式
+pm.test("Response should be JSON", function () {
+    pm.response.to.be.json;
+});
+
+// 检查错误响应
+pm.test("Error response format", function () {
+    if (pm.response.code >= 400) {
+        pm.expect(pm.response.json()).to.have.property("error");
+    }
+});
+
+
+## 补档1.01
+## 5. 社区功能
+
+### 5.1 创建帖子
+POST {{BASE_URL}}/api/posts
+Authorization: Bearer {{TOKEN}}
+Content-Type: multipart/form-data
+
+Form Data:
+- title: "测试帖子"
+- content: "这是一个测试帖子"
+- image: [文件]
+
+Response (201):
+{
+    "id": 1,
+    "title": "测试帖子",
+    "content": "这是一个测试帖子",
+    "image_url": "http://localhost:8080/uploads/posts/1/image.jpg",
+    "created_at": "2024-03-20T10:00:00Z",
+    "user": {
+        "id": 1,
+        "username": "testuser",
+        "avatar_url": "http://localhost:8080/uploads/avatars/1/avatar.jpg"
+    }
+}
+
+### 5.2 获取帖子列表
+GET {{BASE_URL}}/api/posts?page=1&page_size=10
+
+Response (200):
+{
+    "posts": [...],
+    "pagination": {
+        "current_page": 1,
+        "page_size": 10,
+        "total_pages": 5,
+        "total_items": 42
+    }
+}
+
+### 5.3 获取帖子详情
+GET {{BASE_URL}}/api/posts/1
+
+Response (200):
+{
+    "post": {
+        "id": 1,
+        "title": "测试帖子",
+        "content": "这是一个测试帖子",
+        "image_url": "http://localhost:8080/uploads/posts/1/image.jpg",
+        "created_at": "2024-03-20T10:00:00Z",
+        "user": {
+            "id": 1,
+            "username": "testuser",
+            "avatar_url": "http://localhost:8080/uploads/avatars/1/avatar.jpg"
+        },
+        "likes_count": 10,
+        "comments_count": 5,
+        "is_liked": true
+    }
+}
+
+### 5.4 评论帖子
+POST {{BASE_URL}}/api/posts/1/comments
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+Request:
+{
+    "content": "这是一条评论"
+}
+
+Response (201):
+{
+    "id": 1,
+    "content": "这是一条评论",
+    "created_at": "2024-03-20T10:00:00Z",
+    "user": {
+        "id": 1,
+        "username": "testuser",
+        "avatar_url": "http://localhost:8080/uploads/avatars/1/avatar.jpg"
+    }
+}
+
+### 5.5 点赞帖子
+POST {{BASE_URL}}/api/posts/1/likes
+Authorization: Bearer {{TOKEN}}
+
+Response (200):
+{
+    "message": "点赞成功",
+    "likes_count": 11
+}
+
+### 5.6 取消点赞
+DELETE {{BASE_URL}}/api/posts/1/likes
+Authorization: Bearer {{TOKEN}}
+
+Response (200):
+{
+    "message": "取消点赞成功",
+    "likes_count": 10
+}
+
+### 5.7 关注用户
+POST {{BASE_URL}}/api/users/1/follow
+Authorization: Bearer {{TOKEN}}
+
+Response (200):
+{
+    "message": "关注成功",
+    "followers_count": 1
+}
+
+### 5.8 取消关注
+DELETE {{BASE_URL}}/api/users/1/follow
+Authorization: Bearer {{TOKEN}}
+
+Response (200):
+{
+    "message": "取消关注成功",
+    "followers_count": 0
+}
+
+### 5.9 获取关注者列表
+GET {{BASE_URL}}/api/users/1/followers?page=1&page_size=10
+
+Response (200):
+{
+    "followers": [...],
+    "pagination": {
+        "current_page": 1,
+        "page_size": 10,
+        "total_pages": 1,
+        "total_items": 5
+    }
+}
+
+### 5.10 获取关注列表
+GET {{BASE_URL}}/api/users/1/following?page=1&page_size=10
+
+Response (200):
+{
+    "following": [...],
+    "pagination": {
+        "current_page": 1,
+        "page_size": 10,
+        "total_pages": 1,
+        "total_items": 5
+    }
+}
+
+##补档 1.02
+### 2.5 获取项目分类
+GET {{BASE_URL}}/api/project-categories
+
+Response (200):
+{
+    "categories": [
+        {
+            "id": 1,
+            "name": "科技",
+            "created_at": "2024-01-01T00:00:00Z"
+        }
+    ]
+}
+
+### 2.6 获取项目标签
+GET {{BASE_URL}}/api/project-tags
+
+Response (200):
+{
+    "tags": [
+        {
+            "id": 1,
+            "name": "创新",
+            "created_at": "2024-01-01T00:00:00Z"
+        }
+    ]
+}
+
+### 2.7 为项目添加标签
+POST {{BASE_URL}}/api/projects/1/tags
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+Request:
+{
+    "tag_id": 1
+}
+
+Response (200):
+{
+    "message": "Tag added successfully"
+}
+
+## 补档 1.03
+### 2.8 创建项目更新
+POST {{BASE_URL}}/api/projects/1/updates
+Authorization: Bearer {{TOKEN}}
+Content-Type: application/json
+
+Request:
+{
+    "title": "项目进展更新",
+    "content": "这是一个项目进展更新"
+}
+
+Response (201):
+{
+    "id": 1,
+    "title": "项目进展更新",
+    "content": "这是一个项目进展更新",
+    "created_at": "2024-03-20T10:00:00Z"
+}
+
+### 2.9 获取项目更新列表
+GET {{BASE_URL}}/api/projects/1/updates
+
+Response (200):
+{
+    "updates": [...],
+    "pagination": {
+        "current_page": 1,
+        "page_size": 10,
+        "total_pages": 1,
+        "total_items": 5
+    }
+}
+
